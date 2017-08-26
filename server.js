@@ -211,6 +211,7 @@ app.post('/api/reports', function(req, res) {
         cheerio.load(html)('select[name="acourse"] option').each(function(i, element) {
             var courseName = cheerio.load('select[name="acourse"] option')(this).text();
             var acourseValue = cheerio.load('select[name="acourse"] option')(this).attr('value');
+            console.log(entities.encode(courseName));
             if (courseName.indexOf(req.body.course) > -1) {
                 console.log(`Found: ${courseName} (${acourseValue})`);
                 acourse = acourseValue
@@ -298,11 +299,13 @@ app.post('/api/reports', function(req, res) {
 
                 if (overallGrade == null) {
                     overallGrade = 'n/a';
+                } else {
+                  overallGrade = overallGrade.split(':')[1].trim()
                 }
 
                 var data = {
                     error: false,
-                    overallGrade: overallGrade.split(':')[1].trim(),
+                    overallGrade: overallGrade,
                     assignments: []
                 };
 
