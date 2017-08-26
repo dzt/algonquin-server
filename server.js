@@ -8,8 +8,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post('/api/grades', function(req, res) {
 
-  console.log('hi')
-
   const fs = require('fs');
   const cheerio = require('cheerio');
 
@@ -23,8 +21,6 @@ app.post('/api/grades', function(req, res) {
 
   var userid = req.body.userid;
   var password = req.body.password;
-
-  console.log(`${userid} ${password}`)
 
   request({
       url: `https://ipassweb.harrisschool.solutions/school/nsboro/syslogin.html`,
