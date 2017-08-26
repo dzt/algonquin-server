@@ -6,6 +6,8 @@ var port = process.env.PORT || 3000;
 var Entities = require('html-entities').XmlEntities;
 var entities = new Entities();
 
+var fs = require('fs');
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
@@ -94,10 +96,22 @@ app.post('/api/courses', function(req, res) {
         var photo = null
         var photoURL = $('#kidphoto').attr('src');
         console.log(photoURL);
-        request.get('https://ipassweb.harrisschool.solutions/school/nsboro/' + photoURL, function (error, response, body) {
+
+          request({
+              method: 'get',
+              url: 'https://ipassweb.harrisschool.solutions/school/nsboro/' + photoURL,
+              followAllRedirects: true,
+              encoding: 'binary',
+              headers: {
+                  'User-Agent': userAgent
+              }
+          }, function(error, response, body) {
+
             if (!error && response.statusCode == 200) {
 
-                photo = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
+                const encodedImage = new Buffer(body, 'binary').toString('base64')
+
+                photo = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body, 'binary').toString('base64');
                 //photo = new Buffer(body).toString('base64');
 
                 var data = {
@@ -128,7 +142,7 @@ app.post('/api/courses', function(req, res) {
                     };
                 });
 
-                return res.status(200).send(data);
+                return res.status(200).send(data.photo);
             } else {
               return res.status(400).send({
                   error: true,
