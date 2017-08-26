@@ -3,6 +3,9 @@ var app = express();
 var bodyParser = require('body-parser');
 var port = process.env.PORT || 3000;
 
+var Entities = require('html-entities').XmlEntities;
+var entities = new Entities();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
@@ -112,7 +115,7 @@ app.post('/api/courses', function(req, res) {
 
             var course = {
                 id: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(0).text()),
-                name: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(1).html()).split('<br>')[0].split('\n')[0],
+                name: entities.decode(removeWhitespace(cheerio.load(tbody)(this).find('td').eq(1).html()).split('<br>')[0].split('\n')[0]),
                 credits: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(2).text()),
                 comments: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(3).text()),
                 teacher: teacher
