@@ -111,8 +111,8 @@ app.post('/api/courses', function(req, res) {
 
                 const encodedImage = new Buffer(body, 'binary').toString('base64')
 
-                photo = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body, 'binary').toString('base64');
-                //photo = new Buffer(body).toString('base64');
+                // photo = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body, 'binary').toString('base64');
+                photo = new Buffer(body, 'binary').toString('base64');
 
                 var data = {
                     error: false,
