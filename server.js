@@ -10,6 +10,13 @@ app.use(bodyParser.urlencoded({
 
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36';
 
+app.get('/', function(req, res) {
+  return res.status(200).send({
+      error: false,
+      message: "Algonquin App API v1"
+  });
+});
+
 app.post('/api/courses', function(req, res) {
 
     const fs = require('fs');
