@@ -1,0 +1,26 @@
+{
+  "name": "algonquin",
+  "version": "1.0.0",
+  "description": "Server that handles parsing for the Algonquin iOS Grade Checking App",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dzt/algonquin.git"
+  },
+  "author": "Peter Soboyejo <thepcmrtim@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dzt/algonquin/issues"
+  },
+  "homepage": "https://github.com/dzt/algonquin#readme",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "cheerio": "^1.0.0-rc.2",
+    "express": "^4.15.4",
+    "remove-whitespace": "^1.1.0",
+    "request": "^2.81.0"
+  }
+}
