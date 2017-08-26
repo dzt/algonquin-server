@@ -142,7 +142,7 @@ app.post('/api/courses', function(req, res) {
                     };
                 });
 
-                return res.status(200).send(data.photo);
+                return res.status(200).send(data);
             } else {
               return res.status(400).send({
                   error: true,
