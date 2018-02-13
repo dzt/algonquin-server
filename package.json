@@ -22,6 +22,7 @@
     "cheerio": "^1.0.0-rc.2",
     "express": "^4.15.4",
     "html-entities": "^1.2.1",
+    "ical": "^0.5.0",
     "remove-whitespace": "^1.1.0",
     "request": "^2.81.0"
   }
