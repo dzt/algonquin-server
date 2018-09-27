@@ -164,8 +164,6 @@ app.post('/api/courses', function (req, res) {
 
                 });
 
-                console.log(data);
-
                 if (fail) {
                     if (data.id) {
                         return res.status(200).send(data);
