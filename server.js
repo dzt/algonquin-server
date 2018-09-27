@@ -1,12 +1,12 @@
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-var port = process.env.PORT || 3000;
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const port = process.env.PORT || 3000;
 
-var Entities = require('html-entities').XmlEntities;
-var entities = new Entities();
+const Entities = require('html-entities').XmlEntities;
+const entities = new Entities();
 
-var fs = require('fs');
+const fs = require('fs');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -15,16 +15,15 @@ app.use(bodyParser.urlencoded({
 
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36';
 
-app.get('/', function(req, res) {
-  return res.status(200).send({
-      error: false,
-      message: "Algonquin App API v1"
-  });
+app.get('/', function (req, res) {
+    return res.status(200).send({
+        error: false,
+        message: "Algonquin App API v1"
+    });
 });
 
-app.post('/api/courses', function(req, res) {
+app.post('/api/courses', function (req, res) {
 
-    const fs = require('fs');
     const cheerio = require('cheerio');
 
     const j = require('request').jar();
@@ -33,8 +32,8 @@ app.post('/api/courses', function(req, res) {
         jar: j
     });
 
-    var userid = req.body.userid;
-    var password = req.body.password;
+    let userid = req.body.userid;
+    let password = req.body.password;
 
     request({
         url: `https://ipassweb.harrisschool.solutions/school/nsboro/syslogin.html`,
@@ -51,7 +50,7 @@ app.post('/api/courses', function(req, res) {
             password: password,
             userid: userid
         }
-    }, function(err, response, body) {
+    }, function (err, response, body) {
         if (err) {
             return res.status(400).send({
                 error: true,
@@ -77,7 +76,7 @@ app.post('/api/courses', function(req, res) {
                 'User-Agent': userAgent,
                 'Accept-Language': 'en-US,en;q=0.8'
             }
-        }, function(err, response, body) {
+        }, function (err, response, body) {
             if (err) {
                 console.log('err', err);
             } else {
@@ -88,24 +87,33 @@ app.post('/api/courses', function(req, res) {
 
     function parseCourses(html) {
 
-        var tbody = '<table border="1" cellspacing="1" cellpadding="2" bgcolor="#FFFFFF" align="center">' + html.toString().split('<table border="1" cellspacing="1" cellpadding="2" bgcolor="#FFFFFF" align="center">')[1].split('</table>')[0] + '</table>';
+        let tbody = '<table border="1" cellspacing="1" cellpadding="2" bgcolor="#FFFFFF" align="center">' + html.toString().split('<table border="1" cellspacing="1" cellpadding="2" bgcolor="#FFFFFF" align="center">')[1].split('</table>')[0] + '</table>';
 
-        var $ = cheerio.load(html);
+        let $ = cheerio.load(html);
 
-        var stdID = removeWhitespace($('.blueHBoldMed').text()).split('ID: ')[1];
-        var photo = null
-        var photoURL = $('#kidphoto').attr('src');
-        console.log(photoURL);
+        let stdID;
+        try {
+            stdID = removeWhitespace($('.blueHBoldMed').text()).split('ID: ')[1];
+        } catch (e) {
+            return res.status(400).send({
+                error: true,
+                message: "Error Occured while trying to fetch student information, please try agian."
+            });
+        }
 
-          request({
-              method: 'get',
-              url: 'https://ipassweb.harrisschool.solutions/school/nsboro/' + photoURL,
-              followAllRedirects: true,
-              encoding: 'binary',
-              headers: {
-                  'User-Agent': userAgent
-              }
-          }, function(error, response, body) {
+        let photo = null
+        let photoURL = $('#kidphoto').attr('src');
+        console.log('photoURL: ' + photoURL);
+
+        request({
+            method: 'get',
+            url: 'https://ipassweb.harrisschool.solutions/school/nsboro/' + photoURL,
+            followAllRedirects: true,
+            encoding: 'binary',
+            headers: {
+                'User-Agent': userAgent
+            }
+        }, function (error, response, body) {
 
             if (!error && response.statusCode == 200) {
 
@@ -114,7 +122,7 @@ app.post('/api/courses', function(req, res) {
                 // photo = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body, 'binary').toString('base64');
                 photo = new Buffer(body, 'binary').toString('base64');
 
-                var data = {
+                let data = {
                     error: false,
                     id: stdID,
                     student: removeWhitespace($('.blueHBoldMed').text()).split('Student:')[1].split(`ID: ${stdID}`)[0].trim(),
@@ -126,28 +134,56 @@ app.post('/api/courses', function(req, res) {
                     courses: []
                 };
 
-                cheerio.load(tbody)('tr').each(function(i, element) {
+                let fail = false;
 
-                    var teacher = removeWhitespace(cheerio.load(tbody)(this).find('td').eq(1).html()).split('<br>')[1];
+                cheerio.load(tbody)('tr').each(function (i, element) {
 
-                    var course = {
-                        id: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(0).text()),
-                        name: entities.decode(removeWhitespace(cheerio.load(tbody)(this).find('td').eq(1).html()).split('<br>')[0].split('\n')[0]),
-                        credits: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(2).text()),
-                        comments: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(3).text()),
-                        teacher: teacher
-                    };
-                    if (course.id != 'Course') {
-                        data.courses.push(course);
-                    };
+                    let teacher;
+                    try {
+                        teacher = removeWhitespace(cheerio.load(tbody)(this).find('td').eq(1).html()).split('<br>')[1];
+                    } catch (e) {
+                        fail = true;
+                    }
+
+                    let course;
+
+                    try {
+                        course = {
+                            id: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(0).text()),
+                            name: entities.decode(removeWhitespace(cheerio.load(tbody)(this).find('td').eq(1).html()).split('<br>')[0].split('\n')[0]),
+                            credits: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(2).text()),
+                            comments: removeWhitespace(cheerio.load(tbody)(this).find('td').eq(3).text()),
+                            teacher: teacher
+                        };
+                        if (course.id != 'Course') {
+                            data.courses.push(course);
+                        };
+                    } catch (e) {
+                        fail = true;
+                    }
+
                 });
 
-                return res.status(200).send(data);
+                console.log(data);
+
+                if (fail) {
+                    if (data.id) {
+                        return res.status(200).send(data);
+                    } else {
+                        return res.status(400).send({
+                            error: true,
+                            message: "Error Occured while trying to fetch student information, please try agian."
+                        });
+                    }
+                } else {
+                    return res.status(200).send(data);
+                }
+                
             } else {
-              return res.status(400).send({
-                  error: true,
-                  message: "Error Occured while trying to fetch student information, please try agian."
-              });
+                return res.status(400).send({
+                    error: true,
+                    message: "Error Occured while trying to fetch student information, please try agian."
+                });
             }
         });
 
@@ -155,7 +191,7 @@ app.post('/api/courses', function(req, res) {
 
 });
 
-app.post('/api/reports', function(req, res) {
+app.post('/api/reports', function (req, res) {
     const fs = require('fs');
     const cheerio = require('cheerio');
 
@@ -165,8 +201,8 @@ app.post('/api/reports', function(req, res) {
         jar: j
     });
 
-    var userid = req.body.userid;
-    var password = req.body.password;
+    let userid = req.body.userid;
+    let password = req.body.password;
 
     request({
         url: `https://ipassweb.harrisschool.solutions/school/nsboro/syslogin.html`,
@@ -183,7 +219,7 @@ app.post('/api/reports', function(req, res) {
             password: password,
             userid: userid
         }
-    }, function(err, response, body) {
+    }, function (err, response, body) {
         if (err) {
             return res.status(400).send({
                 error: true,
@@ -209,7 +245,7 @@ app.post('/api/reports', function(req, res) {
                 'User-Agent': userAgent,
                 'Accept-Language': 'en-US,en;q=0.8'
             }
-        }, function(err, response, body) {
+        }, function (err, response, body) {
             if (err) {
                 console.log('err', err);
             } else {
@@ -219,21 +255,21 @@ app.post('/api/reports', function(req, res) {
     }
 
     function getTerms(html) {
-        var $ = cheerio.load(html);
-        var termIDs = [];
-        var acourse = '';
-        var termSelection = null;
+        let $ = cheerio.load(html);
+        let termIDs = [];
+        let acourse = '';
+        let termSelection = null;
 
-        cheerio.load(html)('input[name="Term"]').each(function(i, element) {
+        cheerio.load(html)('input[name="Term"]').each(function (i, element) {
             termIDs.push({
                 id: cheerio.load('input[name="Term"]')(this).attr('value'),
                 term: i + 1
             });
         });
 
-        cheerio.load(html)('select[name="acourse"] option').each(function(i, element) {
-            var courseName = cheerio.load('select[name="acourse"] option')(this).text();
-            var acourseValue = cheerio.load('select[name="acourse"] option')(this).attr('value');
+        cheerio.load(html)('select[name="acourse"] option').each(function (i, element) {
+            let courseName = cheerio.load('select[name="acourse"] option')(this).text();
+            let acourseValue = cheerio.load('select[name="acourse"] option')(this).attr('value');
             console.log(entities.encode(courseName));
             if (courseName.indexOf(req.body.course) > -1) {
                 console.log(`Found: ${courseName} (${acourseValue})`);
@@ -255,8 +291,8 @@ app.post('/api/reports', function(req, res) {
             });
         }
 
-        for (var i = 0; i < termIDs.length; i++) {
-            var termNo = termIDs[i].term;
+        for (let i = 0; i < termIDs.length; i++) {
+            let termNo = termIDs[i].term;
             if (parseInt(req.body.term) == termNo) {
                 termSelection = termIDs[i].id
             }
@@ -296,7 +332,7 @@ app.post('/api/reports', function(req, res) {
                 'Term': term,
                 'acourse': acourse
             }
-        }, function(err, response, body) {
+        }, function (err, response, body) {
             if (err) {
                 return res.status(400).send({
                     error: true,
@@ -310,11 +346,11 @@ app.post('/api/reports', function(req, res) {
                     });
                 }
 
-                var $ = cheerio.load(body);
-                var overallGrade = null;
+                let $ = cheerio.load(body);
+                let overallGrade = null;
 
-                $('td[class="MsoLarge"] strong').each(function(i, element) {
-                    var text = $(this).text().trim();
+                $('td[class="MsoLarge"] strong').each(function (i, element) {
+                    let text = $(this).text().trim();
                     if (text.indexOf('Overall Grade') > -1) {
                         overallGrade = text
                     }
@@ -323,10 +359,10 @@ app.post('/api/reports', function(req, res) {
                 if (overallGrade == null) {
                     overallGrade = 'n/a';
                 } else {
-                  overallGrade = overallGrade.split(':')[1].trim()
+                    overallGrade = overallGrade.split(':')[1].trim()
                 }
 
-                var data = {
+                let data = {
                     error: false,
                     overallGrade: overallGrade,
                     assignments: []
@@ -339,7 +375,7 @@ app.post('/api/reports', function(req, res) {
 });
 
 function removeWhitespace(text) {
-    return text.trim()
+    return text.trim();
 };
 
 app.listen(port, () => {
